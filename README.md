@@ -1,2 +1,2 @@
 # Teamnote
-PS용 노트 제작
+PS용 팀노트 제작
