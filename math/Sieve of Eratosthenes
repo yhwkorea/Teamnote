@@ -1,0 +1,20 @@
+MAX = 1e6;
+bitset<MAX+1> is_not_prime;
+vector<int> primes;
+
+void sieve(int n) {
+    is_not_prime[0] = is_not_prime[1] = true;
+    
+    for (int i = 2; i * i <= n; i++) {
+        if (!is_not_prime[i]) {
+            for (int j = i * i; j <= n; j += i) {
+                is_not_prime[j] = true;
+            }
+        }
+    }
+    for (int i = 2; i <= n; i++) {
+        if (!is_not_prime[i]) primes.push_back(i);
+    }
+}
+
+//http://ko.wikipedia.org/wiki/%EC%97%90%EB%9D%BC%ED%86%A0%EC%8A%A4%ED%85%8C%EB%84%A4%EC%8A%A4%EC%9D%98_%EC%B2%B4
