@@ -1,0 +1,16 @@
+struct UnionFind {
+    vector<ll> parent;
+    UnionFind(ll n) {
+        parent.resize(n+1,0);iota(parent.begin(), parent.end(),0);
+    }
+    ll find(ll x) {
+        if (parent[x]==x)return x;
+        return parent[x]=find(parent[x]);
+    }
+    void merge(ll x, ll y) {
+        x= find(x); y= find(y);
+        if (x==y)return;
+        else (parent[x] =y);
+    }
+};
+//rank를 사용하면 역 아커만 상수, 경로 압축이 안될 경우 제외하고 시행
