@@ -1,0 +1,93 @@
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+// 문제 조건: N은 최대 50,000
+const int MAX = 50001;
+const int LOG = 17; // 2^16 = 65,536 이므로 16~17이면 충분
+
+vector<int> adj[MAX];
+int parent[MAX][LOG];
+int depth[MAX];
+bool visited[MAX];
+
+// 1. DFS로 트리의 구조(깊이와 1번째 부모) 파악
+void dfs(int cur, int d) {
+    visited[cur] = true;
+    depth[cur] = d;
+    for (int next : adj[cur]) {
+        if (!visited[next]) {
+            parent[next][0] = cur; // 바로 위 부모 저장
+            dfs(next, d + 1);
+        }
+    }
+}
+
+// 2. 희소 배열(Sparse Table) 구성: N log N
+void set_parent(int n) {
+    for (int i = 1; i < LOG; i++) {
+        for (int j = 1; j <= n; j++) {
+            // j의 2^i번째 부모 = (j의 2^(i-1)번째 부모)의 2^(i-1)번째 부모
+            parent[j][i] = parent[parent[j][i - 1]][i - 1];
+        }
+    }
+}
+
+// 3. LCA 쿼리: log N
+int get_lca(int u, int v) {
+    // 항상 v가 더 깊은 노드가 되도록 스왑
+    if (depth[u] > depth[v]) swap(u, v);
+
+    // 두 노드의 깊이 맞추기
+    for (int i = LOG - 1; i >= 0; i--) {
+        if (depth[v] - depth[u] >= (1 << i)) {
+            v = parent[v][i];
+        }
+    }
+
+    // 깊이를 맞췄을 때 같다면 u가 조상
+    if (u == v) return u;
+
+    // 동시에 위로 점프하며 공통 조상 바로 아래까지 이동
+    for (int i = LOG - 1; i >= 0; i--) {
+        if (parent[u][i] != parent[v][i]) {
+            u = parent[u][i];
+            v = parent[v][i];
+        }
+    }
+
+    // 최종적으로 한 칸 위의 부모가 LCA
+    return parent[u][0];
+}
+
+int main() {
+    // 빠른 입출력 필수
+    ios_base::sync_with_stdio(false);
+    cin.tie(NULL);
+
+    int n, m;
+    cin >> n;
+
+    // 트리 인접 리스트 구성
+    for (int i = 0; i < n - 1; i++) {
+        int u, v;
+        cin >> u >> v;
+        adj[u].push_back(v);
+        adj[v].push_back(u);
+    }
+
+    // 전처리 수행
+    dfs(1, 0); // 루트를 1번으로 시작
+    set_parent(n);
+
+    cin >> m;
+    while (m--) {
+        int u, v;
+        cin >> u >> v;
+        cout << get_lca(u, v) << "\n";
+    }
+
+    return 0;
+}
