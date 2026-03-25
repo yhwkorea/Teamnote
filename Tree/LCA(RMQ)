@@ -1,0 +1,95 @@
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+const int MAX = 100005;
+const int LOG = 19; // 2 * MAX가 들어가므로 2^18.5 쯤 되는 19 정도로 설정
+
+vector<int> adj[MAX];
+int depth[MAX];
+int first_occ[MAX]; // 각 노드가 euler_tour에서 처음 등장하는 인덱스
+vector<int> euler_tour;
+
+// 1. 오일러 투어 수행: 트리를 일렬로 펴기
+void dfs(int cur, int d) {
+    first_occ[cur] = euler_tour.size();
+    euler_tour.push_back(cur);
+    depth[cur] = d;
+
+    for (int next : adj[cur]) {
+        if (first_occ[next] == -1) { // 방문하지 않은 노드
+            dfs(next, d + 1);
+            euler_tour.push_back(cur); // 자식 방문 후 다시 돌아올 때 기록
+        }
+    }
+}
+
+// 2. RMQ를 위한 Sparse Table (깊이가 최소인 노드의 '인덱스' 저장)
+int st[MAX * 2][LOG];
+int lg2[MAX * 2];
+
+void build_sparse_table() {
+    int m = euler_tour.size();
+    
+    // 로그 값 미리 계산
+    lg2[1] = 0;
+    for (int i = 2; i <= m; i++) lg2[i] = lg2[i / 2] + 1;
+
+    // Base case: 자기 자신
+    for (int i = 0; i < m; i++) st[i][0] = euler_tour[i];
+
+    // 희소 배열 채우기 (깊이가 가장 낮은 노드를 선택)
+    for (int j = 1; j < LOG; j++) {
+        for (int i = 0; i + (1 << j) <= m; i++) {
+            int left = st[i][j - 1];
+            int right = st[i + (1 << (j - 1))][j - 1];
+            if (depth[left] < depth[right]) st[i][j] = left;
+            else st[i][j] = right;
+        }
+    }
+}
+
+// 3. 쿼리: O(1)에 LCA 반환
+int get_lca(int u, int v) {
+    int l = first_occ[u];
+    int r = first_occ[v];
+    if (l > r) swap(l, r);
+
+    int j = lg2[r - l + 1];
+    int left = st[l][j];
+    int right = st[r - (1 << j) + 1][j];
+
+    if (depth[left] < depth[right]) return left;
+    else return right;
+}
+
+int main() {
+    ios_base::sync_with_stdio(false);
+    cin.tie(NULL);
+
+    int n, m;
+    cin >> n;
+
+    for (int i = 0; i < n - 1; i++) {
+        int u, v;
+        cin >> u >> v;
+        adj[u].push_back(v);
+        adj[v].push_back(u);
+    }
+
+    // 초기화 및 전처리
+    fill(first_occ, first_occ + MAX, -1);
+    dfs(1, 0);
+    build_sparse_table();
+
+    cin >> m;
+    while (m--) {
+        int u, v;
+        cin >> u >> v;
+        cout << get_lca(u, v) << "\n";
+    }
+
+    return 0;
+}
